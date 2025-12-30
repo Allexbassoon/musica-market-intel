@@ -1,0 +1,32 @@
+# --- Ambiente Virtual e Python ---
+.venv/
+__pycache__/
+*.py[cod]
+
+# --- Logs do Sistema ---
+logs/*.log
+*.log
+
+# --- Dados (Datalake Local) ---
+data/
+
+# ...Exceto a estrutura de pastas (e os arquivos .gitkeep para mantê-las)
+!data/raw/
+!data/intermediate/
+!data/gold/
+!data/raw/.gitkeep
+!data/intermediate/.gitkeep
+!data/gold/.gitkeep
+
+# ...Ignorar os arquivos dentro das pastas (o asterisco pega tudo)
+data/raw/*
+data/intermediate/*
+data/gold/*
+
+# --- Exceções Estratégicas (O que queremos ver no GitHub) ---
+!data/gold/opportunities.csv
+!data/gold/opportunities.parquet
+
+# --- Sistema Operacional ---
+.DS_Store
+Thumbs.db

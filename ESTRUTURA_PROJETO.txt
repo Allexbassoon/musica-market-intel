@@ -1,0 +1,100 @@
+================================================================================
+PROJETO: MUSICA_MARKET_INTEL
+ARQUIVO: GUIA DE NAVEGAÇÃO E ESTRUTURA DO PROJETO
+DATA: 29/12/2025
+AUTOR: Specialist Data Scientist (Contexto: Documentação de Arquitetura)
+================================================================================
+
+1. VISÃO GERAL
+--------------------------------------------------------------------------------
+Este diretório contém o pipeline completo de Engenharia de Dados (ETL) para o
+monitoramento do mercado de trabalho da música erudita no Brasil.
+A arquitetura segue o padrão "Medallion" (Bronze -> Silver -> Gold), priorizando
+rastreabilidade, idempotência e execução local reprodutível.
+
+2. RAIZ DO PROJETO
+--------------------------------------------------------------------------------
+[DIR] .venv/
+    - O Ambiente Virtual Python isolado. Contém todas as bibliotecas instaladas.
+    - Função: Garantir que o projeto rode igual em qualquer máquina, sem conflito
+      de versões globais do Python.
+
+[ARQ] requirements.txt
+    - A lista de "ingredientes" do projeto (pandas, pdfplumber, pyarrow, etc.).
+    - Função: Permite reconstruir o ambiente com `pip install -r requirements.txt`.
+
+[ARQ] VERSOES.txt
+    - O Log de Mudanças (Changelog) manual.
+    - Função: Rastrear o que mudou em cada versão do MVP (conforme visto na tela,
+      estamos na v1.0 Congelada).
+
+3. DIRETÓRIO SRC/PIPELINE (O MOTOR DO PROJETO)
+--------------------------------------------------------------------------------
+Aqui reside a lógica de processamento. Cada script representa um estágio do dado.
+
+[ARQ] src/pipeline/collect_raw.py (Camada Bronze)
+    - O "Coletor".
+    - Função: Baixa os PDFs dos links definidos, calcula o Hash (SHA256) para
+      evitar duplicatas e atualiza o manifesto.
+    - Output: Salva arquivos em `data/raw/files` e atualiza `data/raw/manifest.parquet`.
+
+[ARQ] src/pipeline/process_silver.py (Camada Silver)
+    - O "Tradutor".
+    - Função: Lê os PDFs brutos e extrai o texto puro usando `pdfplumber`.
+      Não interpreta o dado, apenas o torna legível para a máquina.
+    - Output: Gera `data/intermediate/parsed_pages.parquet`.
+
+[ARQ] src/pipeline/inspect_silver.py (Ferramenta de Debug)
+    - O "Microscópio".
+    - Função: Script utilitário para ler e exibir o conteúdo dos arquivos Parquet
+      da camada Silver no terminal. Essencial para verificar se o OCR/Extração funcionou.
+
+[ARQ] src/pipeline/process_gold.py (Camada Gold - Produção)
+    - O "Analista".
+    - Função: Aplica as Regras de Negócio (Regex, NLP Básico). Extrai Salários,
+      Instrumentos e Vagas do texto bruto. Cria a tabela final analítica.
+    - Output: Gera `data/gold/opportunities.parquet`.
+
+[ARQ] src/pipeline/process_gold_v1_FINAL_MVP.py (Legado/Backup)
+    - O "Snapshot".
+    - Função: Cópia congelada do script Gold que funcionou no MVP 1.0.
+    - Importância: Segurança. Se a refatoração do `process_gold.py` quebrar,
+      temos este arquivo como porto seguro.
+
+4. DIRETÓRIO DATA (O LAGO DE DADOS)
+--------------------------------------------------------------------------------
+Seguindo a Arquitetura Medallion:
+
+[DIR] data/raw/ (Bronze)
+    - Dados imutáveis. Como chegaram da fonte.
+    - files/: Os PDFs reais (renomeados pelo Hash para evitar sobrescrita).
+    - manifest.parquet: O "Cartório". Tabela que diz qual URL gerou qual arquivo,
+      data de download e status.
+
+[DIR] data/intermediate/ (Silver)
+    - Dados limpos e estruturados, mas ainda não enriquecidos.
+    - parsed_pages.parquet: Tabela contendo o texto extraído de cada página de
+      cada PDF. É a base para qualquer mineração de texto futura.
+
+[DIR] data/gold/ (Gold)
+    - Dados de Negócio. Prontos para responder à "Pergunta-Mãe".
+    - opportunities.parquet: A tabela final com Vagas, Salários, Instrumentos.
+    - opportunities.csv: Versão legível para Excel/Humanos da tabela acima.
+    - staging_instruments.parquet: (Tabela Auxiliar) Provavelmente usada para
+      normalizar nomes de instrumentos (ex: "Fagote" = "Bassoon").
+    - staging_salaries.parquet: (Tabela Auxiliar) Usada para normalizar e
+      converter valores monetários extraídos.
+
+5. DIRETÓRIO LOGS (OBSERVABILIDADE)
+--------------------------------------------------------------------------------
+[ARQ] ingestion.log
+    - O diário de bordo do `collect_raw.py`. Registra falhas de download e
+      novos arquivos encontrados.
+
+[ARQ] processing_silver.log
+    - O diário de bordo do processamento de texto. Registra erros de leitura
+      de PDF ou falhas de parsing.
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================

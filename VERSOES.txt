@@ -1,0 +1,4 @@
+VERSÃO 1.0 (MVP) - CONGELADA
+Arquivo de Backup: src/pipeline/process_gold_v1_FINAL_MVP.py
+Status: Funcionando perfeitamente.
+Resultados: 41 salários extraídos, Matches da OSB e Filarmônica confirmados.
